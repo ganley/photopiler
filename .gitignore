@@ -1,0 +1,13 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+.claude/
+# Scratch renders; the original prototype (scratch/old.py) is kept.
+scratch/*.jpg
+scratch/*.png
+
+# Reference image from the spec; kept locally, not published (unknown source).
+doc/example_photo_pile.png

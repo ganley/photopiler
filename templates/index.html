@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PhotoPiler</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖼️</text></svg>">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="layout">
+    <aside>
+      <header>
+        <h1>PhotoPiler</h1>
+        <p class="tagline">Turn a handful of photos into a pile of prints.</p>
+      </header>
+
+      <form id="controls" method="get" action="{{ url_for('index') }}"
+            data-upload-url="{{ url_for('pile_upload') }}" data-max-files="{{ max_files }}">
+        <fieldset class="photos">
+          <legend>Photos</legend>
+          <p id="photo-status">Demo photos</p>
+          <div class="row">
+            {# No name attribute: the files are never submitted directly; the page shrinks them first. #}
+            <label class="button">
+              <input type="file" id="upload" accept="image/*" multiple hidden>
+              Use your own…
+            </label>
+            <button type="button" id="use-demo" hidden>Back to demo</button>
+          </div>
+        </fieldset>
+
+        {% for name, legend, choices in controls %}
+          <fieldset>
+            <legend>{{ legend }}</legend>
+            <div class="chips">
+              {% for value, label in choices.items() %}
+                <label class="chip"{% if value.value == 'random' %} title="Chosen at random for each photo"{% endif %}>
+                  <input type="radio" name="{{ name }}" value="{{ value.value }}"
+                         {% if options[name] == value %}checked{% endif %}>
+                  <span>{{ label }}</span>
+                </label>
+              {% endfor %}
+            </div>
+          </fieldset>
+        {% endfor %}
+
+        <fieldset>
+          <legend>Canvas size</legend>
+          <input type="range" name="scale" id="scale" min="{{ min_scale }}" max="{{ max_scale }}"
+                 step="0.05" value="{{ '%.2f' % options.scale }}" aria-label="Canvas size">
+          <div class="range-labels"><span>Crowded</span><span>Spread out</span></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Camera angle</legend>
+          <input type="range" name="tilt" id="tilt" min="0" max="{{ max_tilt }}"
+                 step="1" value="{{ '%g' % options.tilt }}" aria-label="Camera angle">
+          <div class="range-labels"><span>Overhead</span><span>Low angle</span></div>
+        </fieldset>
+
+        {# Options re-render as soon as they change, keeping the layout ("Apply" is the
+           submitter that keeps the seed); Shuffle omits the seed, so a new one is chosen. #}
+        <button type="submit" name="seed" value="{{ options.seed }}" id="apply" hidden>Apply</button>
+        <button type="submit" class="primary shuffle">Shuffle</button>
+      </form>
+
+      <p class="hint">“Random” picks a different style for each photo.</p>
+      <p id="message" role="status" hidden></p>
+
+      <nav class="links">
+        <a id="download" class="button" href="{{ url_for('pile_jpg', **query) }}"
+           download="photo-pile-{{ options.seed }}.jpg">Download image</a>
+        <a id="permalink" href="{{ url_for('index', **query) }}">Link to this pile</a>
+      </nav>
+    </aside>
+
+    <main>
+      <img id="pile" src="{{ url_for('pile_jpg', **query) }}" alt="A pile of photos">
+    </main>
+  </div>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
