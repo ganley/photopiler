@@ -41,8 +41,7 @@ Then open http://127.0.0.1:5000. Run the tests with `.venv/bin/pytest`.
 ## Deployment
 
 The app runs on [Fly.io](https://fly.io) at **https://photopiler.fly.dev/** (see
-`fly.toml`). It uses one 2-CPU, 1 GB machine that stops when idle and starts on
-the next request. To deploy changes:
+`fly.toml`). It uses one always-on 2-CPU, 1 GB machine. To deploy changes:
 
 ```sh
 fly deploy --ha=false

@@ -87,7 +87,7 @@ The time estimates are for focused work. Aesthetic tuning is the thing most like
   - Cold start after idle: about 3.7 s for the page, then about 3 s for the first pile.
   - Peak memory: about 330 MB of 1 GB.
 - The speedups were: per-print work in parallel on a thread pool; the wooden table cached in 256 px size steps, with the common ones generated at startup; and a fix for a rounding bug that resized every print on every render.
-- Setting `min_machines_running = 1` would remove cold starts, at about $6.64/month for an always-on machine.
+- The machine is now **always on** (`auto_stop_machines = "off"`, `min_machines_running = 1`), so there are no cold starts. It costs about $6.64/month.
 
 ## Areas of high uncertainty that could threaten the schedule
 1. **Aesthetic quality and tuning (highest risk).** "Looks like a pile" and "looks old" are subjective. Placement, shadow, border proportions, and aging parameters can each absorb unlimited iteration. *Mitigation:* agree up front on a "good enough" bar per phase, keep all tunables as named constants in one place, and add a `/debug` page that renders the same seed at several settings side by side for fast comparison.
