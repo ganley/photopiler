@@ -38,4 +38,14 @@ Then open http://127.0.0.1:5000. Run the tests with `.venv/bin/pytest`.
 | `static/`, `templates/` | The page |
 | `doc/` | The original spec and implementation plan |
 
-A `Dockerfile` is included for deployment.
+## Deployment
+
+The app runs on [Fly.io](https://fly.io) at **https://photopiler.fly.dev/** (see
+`fly.toml`). It uses one 2-CPU, 1 GB machine that stops when idle and starts on
+the next request. To deploy changes:
+
+```sh
+fly deploy --ha=false
+```
+
+The `Dockerfile` works on any container host.

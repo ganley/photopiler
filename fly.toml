@@ -1,0 +1,36 @@
+# Fly.io deployment. See doc/PLAN.md, "Hosting advice".
+app = "photopiler"
+primary_region = "iad"
+
+[build]
+  # Uses the Dockerfile.
+
+[env]
+  PORT = "8080"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Stop when idle and start again on the next request (about 1-2 s), so we pay
+  # only while someone is using it.
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  # A heavy render uses about 250 MB, so keep concurrent requests low on a
+  # 1 GB machine; extra requests wait in line.
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 2
+    hard_limit = 4
+
+  [[http_service.checks]]
+    grace_period = "15s"
+    interval = "30s"
+    method = "GET"
+    path = "/healthz"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "1gb"

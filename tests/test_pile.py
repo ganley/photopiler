@@ -115,6 +115,31 @@ def test_same_seed_gives_same_pile():
     assert a.tobytes() != c.tobytes()
 
 
+def test_parallel_render_matches_step_by_step():
+    """Rendering prints in parallel must give exactly what doing it in order does."""
+    from photopiler import camera, table
+    from photopiler.options import Age, Border, Tone
+
+    photos = [solid(160, 120, (i * 35, 90, 200 - i * 20)) for i in range(6)]
+    for tilt in (0, 40):
+        options = PileOptions(
+            seed=11, border=Border.RANDOM, tone=Tone.RANDOM, age=Age.RANDOM, tilt=tilt
+        )
+        styles = pile.resolve_styles(photos, options)
+        sizes = [p.size for p in (pile.make_print(ph, s) for ph, s in zip(photos, styles))]
+        side = pile.canvas_side(sizes, options.scale)
+        shrink = 1.0  # well under the size cap
+        expected = table.surface(side, tilt, shrink)
+        for placement in pile.plan_layout(photos, options.seed):
+            printed = pile.make_print(photos[placement.index], styles[placement.index])
+            placed = pile.place_print(printed, placement, side, shrink, tilt)
+            if placed:
+                expected.paste(placed[0], placed[1], placed[0])
+        if tilt:
+            expected = camera.depth_of_field(expected, tilt)
+        assert pile.render_pile(photos, options).tobytes() == expected.tobytes()
+
+
 def test_render_rejects_empty_input():
     with pytest.raises(ValueError):
         pile.render_pile([], PileOptions(seed=1))
@@ -133,6 +158,7 @@ def test_web_routes():
 
     client = app.test_client()
     assert client.get("/").status_code == 200
+    assert client.get("/healthz").get_data(as_text=True) == "ok"
     resp = client.get("/pile.jpg?seed=1")
     assert resp.status_code == 200
     assert resp.mimetype == "image/jpeg"

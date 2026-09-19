@@ -76,8 +76,18 @@ The time estimates are for focused work. Aesthetic tuning is the thing most like
 - To reshuffle without uploading again, keep the downscaled blobs in browser memory and re-POST them. The server keeps nothing, which also avoids privacy questions.
 - Server-side limits: at most about 30 files, `MAX_CONTENT_LENGTH` of about 40 MB, `Image.MAX_IMAGE_PIXELS`, and reject files Pillow can't open. Return a friendly error for 0 images.
 
-### Phase 7 — Deploy (about 2–4 h)
-- Push to GitHub and create a Render web service from the Dockerfile. Smoke-test the public URL from another device.
+### Phase 7 — Deploy (done)
+- The code is on GitHub at https://github.com/ganley/photopiler (public). The reference image `doc/example_photo_pile.png` is kept out of the repo because its source is unknown.
+- The app is deployed on Fly.io at https://photopiler.fly.dev/ as the app `photopiler` in region `iad`, on one `shared-cpu-2x` machine with 1 GB. It stops when idle and starts on demand. The configuration is in `fly.toml`; deploy with `fly deploy --ha=false`.
+- Measured on Fly after the speedups:
+  - Demo shuffle: about 0.9–1.0 s.
+  - Heavy aging: about 1.3 s.
+  - Tilted view: about 2.3 s.
+  - Worst case (maximum canvas size, 65°, heavy aging): about 5 s.
+  - Cold start after idle: about 3.7 s for the page, then about 3 s for the first pile.
+  - Peak memory: about 330 MB of 1 GB.
+- The speedups were: per-print work in parallel on a thread pool; the wooden table cached in 256 px size steps, with the common ones generated at startup; and a fix for a rounding bug that resized every print on every render.
+- Setting `min_machines_running = 1` would remove cold starts, at about $6.64/month for an always-on machine.
 
 ## Areas of high uncertainty that could threaten the schedule
 1. **Aesthetic quality and tuning (highest risk).** "Looks like a pile" and "looks old" are subjective. Placement, shadow, border proportions, and aging parameters can each absorb unlimited iteration. *Mitigation:* agree up front on a "good enough" bar per phase, keep all tunables as named constants in one place, and add a `/debug` page that renders the same seed at several settings side by side for fast comparison.

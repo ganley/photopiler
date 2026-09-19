@@ -2,11 +2,14 @@
 
 import io
 import random
+import threading
 from pathlib import Path
 
 from flask import Flask, render_template, request, send_file
 from PIL import Image, UnidentifiedImageError
 
+from . import table
+from .effects import bordered_size
 from .loading import demo_photos, load_photo
 from .options import (
     MAX_SCALE,
@@ -20,7 +23,7 @@ from .options import (
     clamp_tilt,
     parse_enum,
 )
-from .pile import render_pile
+from .pile import canvas_side, render_pile
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -32,6 +35,18 @@ app = Flask(__name__, template_folder=ROOT / "templates", static_folder=ROOT / "
 app.config["MAX_CONTENT_LENGTH"] = 40 * 1024 * 1024
 
 demo_photos()  # warm the cache at startup rather than on the first request
+
+
+def _warm_tables():
+    """Generate the overhead tables that default demo piles use, so the first
+    visitor after a (cold) start doesn't wait for them."""
+    sizes = [(p.width, p.height) for p in demo_photos()]
+    for style in (Border.NONE, Border.POLAROID):  # the smallest and largest prints
+        side = canvas_side([bordered_size(s, style) for s in sizes], PileOptions.scale)
+        table.surface(side, 0)
+
+
+threading.Thread(target=_warm_tables, daemon=True).start()
 
 # The radio-button groups on the page: (PileOptions field / query param, legend, choices).
 CHOICE_CONTROLS = [
@@ -114,6 +129,12 @@ def index():
         max_tilt=MAX_TILT,
         max_files=MAX_UPLOAD_FILES,
     )
+
+
+@app.get("/healthz")
+def healthz():
+    """Cheap liveness check for the hosting platform."""
+    return "ok", 200, {"Content-Type": "text/plain"}
 
 
 @app.get("/pile.jpg")

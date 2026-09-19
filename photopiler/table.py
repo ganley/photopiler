@@ -43,11 +43,22 @@ def surface(side: int, tilt: float, unit: float = 1.0) -> Image.Image:
     than 1 when the canvas size cap has shrunk the prints).
     """
     # The table doesn't depend on the seed or the photos, so shuffling and
-    # style changes reuse it. Copy, since the caller draws on the result.
-    return _cached_surface(side, round(tilt, 3), round(unit, 6)).copy()
+    # style changes reuse it. The canvas size varies by around ±5% from pile to
+    # pile (random borders change the prints' total area), so generate at the
+    # next multiple of SIZE_STEP and crop: overhead from the top-left, which
+    # keeps table coordinates exact; tilted from the center, where the camera
+    # points (the wood's perspective is then off by at most about 12%, which
+    # doesn't show).
+    size = -(-side // SIZE_STEP) * SIZE_STEP
+    table = _cached_surface(size, round(tilt, 3), round(unit, 6))
+    offset = 0 if tilt <= 0 else (size - side) // 2
+    return table.crop((offset, offset, offset + side, offset + side))  # a copy
 
 
-@lru_cache(maxsize=4)  # about 12 MB each for a 2000 px table
+SIZE_STEP = 256
+
+
+@lru_cache(maxsize=4)  # about 16 MB each for a 2300 px table
 def _cached_surface(side: int, tilt: float, unit: float) -> Image.Image:
     out = np.empty((side, side, 3), np.uint8)
     xs = np.arange(side, dtype=np.float32) + 0.5
